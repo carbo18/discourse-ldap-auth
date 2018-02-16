@@ -1,6 +1,6 @@
 # name:ldap 
 # about: A plugin to provide ldap authentication. 
-# version: 0.3.0
+# version: 0.3.5
 # authors: Jon Bake <jonmbake@gmail.com>
 
 enabled_site_setting :ldap_enabled
@@ -23,6 +23,7 @@ class LDAPAuthenticator < ::Auth::Authenticator
   end
 
   def register_middleware(omniauth)
+    omniauth.configure{ |c| c.form_css = File.read(File.expand_path("../css/form.css", __FILE__)) }
     omniauth.provider :ldap,
       setup:  -> (env) {
         env["omniauth.strategy"].options.merge!(
@@ -31,7 +32,8 @@ class LDAPAuthenticator < ::Auth::Authenticator
           method: SiteSetting.ldap_method,
           base: SiteSetting.ldap_base,
           uid: SiteSetting.ldap_uid,
-          bind_dn: SiteSetting.ldap_bind_dn,
+          # In 0.3.0, we fixed a typo in the ldap_bind_dn config name. This fallback will be removed in a future version.
+          bind_dn: SiteSetting.ldap_bind_dn.presence || SiteSetting.try(:ldap_bind_db),
           password: SiteSetting.ldap_password,
           filter: SiteSetting.ldap_filter
         )
